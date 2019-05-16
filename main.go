@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/briandowns/formatifier"
 	"time"
 )
 
@@ -12,8 +13,11 @@ func main() {
 	// Observer: Creates a Log-Entry & Returns an Observable / Output-Channel
 	logChan := logOberserver(emitter)
 
+	// Oberserver: Transforms string to leet speak & Returns an Obserable / Output-Channel
+	leetChan := morseOberserver(logChan)
+
 	// Observer: Print Line
-	printOberserver(logChan)
+	printOberserver(leetChan)
 
 	// Block main channel to keep the program running
 	select {}
@@ -36,6 +40,26 @@ func logOberserver(emitter *time.Ticker) <-chan string {
 		}
 	}()
 	return logChan
+}
+
+func morseOberserver(input <-chan string) <-chan string {
+	morseChan := make(chan string)
+	go func() {
+		for {
+			select {
+			case str, open := <-input:
+				if !open {
+					break
+				}
+				morse, err := formatifier.ToMorseCode(str)
+				if err != nil {
+					continue
+				}
+				morseChan <- morse
+			}
+		}
+	}()
+	return morseChan
 }
 
 func printOberserver(input <-chan string) {
